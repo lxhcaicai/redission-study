@@ -132,4 +132,27 @@ public class RedissionTester {
         // 关闭客户端
         redissonClient.shutdown();
     }
+
+    @Test
+    public void queue() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作queue====================
+        RQueue<String> queue = redissonClient.getQueue("queue");
+        // 存储
+        queue.add("victory1");
+        queue.add("victory2");
+        // 取值
+        String item = queue.poll();
+        System.out.println(item);
+
+        RQueue<Object> queue1 = redissonClient.getQueue("queue");
+        System.out.println(queue1);
+        // 关闭客户端
+        redissonClient.shutdown();
+    }
 }

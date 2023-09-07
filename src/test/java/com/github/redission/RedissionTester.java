@@ -2,10 +2,7 @@ package com.github.redission;
 
 import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
-import org.redisson.api.RBinaryStream;
-import org.redisson.api.RBucket;
-import org.redisson.api.RList;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.redisson.config.Config;
 
 import java.io.*;
@@ -89,6 +86,27 @@ public class RedissionTester {
         // 通过key取value值
         List<Object> list2 = redissonClient.getList("list").get();
         System.out.println(list2);
+        // 关闭客户端
+        redissonClient.shutdown();
+    }
+
+    @Test
+    public void set() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作Set====================
+        RSet<String> set = redissonClient.getSet("set");
+        set.add("victory1");
+        set.add("victory2");
+        System.out.println(set);
+
+        //通过key取value值
+        RSet<Object> set1 = redissonClient.getSet("set");
+        System.out.println(set1);
         // 关闭客户端
         redissonClient.shutdown();
     }

@@ -155,4 +155,34 @@ public class RedissionTester {
         // 关闭客户端
         redissonClient.shutdown();
     }
+
+    @Test
+    public void rateLimiter() throws InterruptedException {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作rateLimiter====================
+        RRateLimiter rateLimiter = redissonClient.getRateLimiter("rateLimiter");
+        //创建限流器，最大流速:每1秒钟产生20个令牌
+        rateLimiter.trySetRate(RateType.OVERALL, 20, 1, RateIntervalUnit.SECONDS);
+        for (int i = 0; i < 10; i ++) {
+            new Thread(new Runnable() {
+                int i = 0;
+                @Override
+                public void run() {
+                    while (true) {
+                        rateLimiter.acquire(1);
+                        System.out.println(Thread.currentThread() + "-" + System.currentTimeMillis() + "-" + i++);
+                    }
+                }
+            }).start();
+        }
+        //等待执行完成,不设置等待可能出现还未执行完成客户端就关闭的情况
+        Thread.sleep(5000);
+        // 关闭客户端
+        redissonClient.shutdown();
+    }
 }

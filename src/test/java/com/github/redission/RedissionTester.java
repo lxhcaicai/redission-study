@@ -4,11 +4,13 @@ import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.RBinaryStream;
 import org.redisson.api.RBucket;
+import org.redisson.api.RList;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class RedissionTester {
@@ -62,5 +64,32 @@ public class RedissionTester {
         // 关闭客户端
         redissonClient.shutdown();
 
+    }
+
+    @Test
+    public void list() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作list====================
+        RList<String> list = redissonClient.getList("list");
+        list.add("victory1");
+        list.add("victory2");
+        System.out.println(list);
+
+        // 取值
+        List<Object> list1 = redissonClient.getList("list").get();
+        System.out.println(list1);
+        //移除索引0位置元素
+        list.remove(0);
+        System.out.println(list);
+        // 通过key取value值
+        List<Object> list2 = redissonClient.getList("list").get();
+        System.out.println(list2);
+        // 关闭客户端
+        redissonClient.shutdown();
     }
 }

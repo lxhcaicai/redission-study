@@ -110,4 +110,26 @@ public class RedissionTester {
         // 关闭客户端
         redissonClient.shutdown();
     }
+
+    @Test
+    public void map() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作map====================
+        RMap<Object,Object> map = redissonClient.getMap("map");
+        map.put("name1", "victory1");
+        map.put("name2", "victory2");
+        map.forEach((key, value) -> {
+            System.out.println("key = " + key + ", value = " + value);
+        });
+        //通过key取value值
+        Object o = redissonClient.getMap("map").get("name1");
+        System.out.println(o);
+        // 关闭客户端
+        redissonClient.shutdown();
+    }
 }

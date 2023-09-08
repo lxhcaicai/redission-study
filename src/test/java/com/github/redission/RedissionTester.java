@@ -185,4 +185,33 @@ public class RedissionTester {
         // 关闭客户端
         redissonClient.shutdown();
     }
+
+    @Test
+    public void lock() throws InterruptedException {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作rateLimiter====================
+        RLock lock = redissonClient.getLock("lock");
+        for (int i = 0; i < 5; i ++) {
+            new Thread(()  -> {
+                lock.lock();
+                try {
+                    System.out.println(Thread.currentThread() + "-" + System.currentTimeMillis() + "-" + "获取锁");
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+            }).start();
+        }
+        //等待执行完成,不设置等待可能出现还未执行完成客户端就关闭的情况
+        Thread.sleep(5000);
+        // 关闭客户端
+        redissonClient.shutdown();
+    }
 }

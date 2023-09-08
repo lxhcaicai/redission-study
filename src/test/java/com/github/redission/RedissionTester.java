@@ -6,7 +6,6 @@ import org.redisson.api.*;
 import org.redisson.config.Config;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -120,7 +119,7 @@ public class RedissionTester {
         RedissonClient redissonClient = Redisson.create(config);
 
         //====================操作map====================
-        RMap<Object,Object> map = redissonClient.getMap("map");
+        RMap<Object, Object> map = redissonClient.getMap("map");
         map.put("name1", "victory1");
         map.put("name2", "victory2");
         map.forEach((key, value) -> {
@@ -168,9 +167,10 @@ public class RedissionTester {
         RRateLimiter rateLimiter = redissonClient.getRateLimiter("rateLimiter");
         //创建限流器，最大流速:每1秒钟产生20个令牌
         rateLimiter.trySetRate(RateType.OVERALL, 20, 1, RateIntervalUnit.SECONDS);
-        for (int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 10; i++) {
             new Thread(new Runnable() {
                 int i = 0;
+
                 @Override
                 public void run() {
                     while (true) {
@@ -196,8 +196,8 @@ public class RedissionTester {
 
         //====================操作rateLimiter====================
         RLock lock = redissonClient.getLock("lock");
-        for (int i = 0; i < 5; i ++) {
-            new Thread(()  -> {
+        for (int i = 0; i < 5; i++) {
+            new Thread(() -> {
                 lock.lock();
                 try {
                     System.out.println(Thread.currentThread() + "-" + System.currentTimeMillis() + "-" + "获取锁");
@@ -214,4 +214,32 @@ public class RedissionTester {
         // 关闭客户端
         redissonClient.shutdown();
     }
+
+    @Test
+    public void bloomFilter() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        RedissonClient redissonClient = Redisson.create(config);
+
+        //====================操作布隆过滤器====================
+        RBloomFilter<String> bloomFilter = redissonClient.getBloomFilter("bloom-filter");
+        // 初始化布隆过滤器，初始化预期插入的数据量为200，期望误差率为0.01
+        bloomFilter.tryInit(200, 0.01);
+        // 插入数据
+        bloomFilter.add("lxhcaicai-1");
+        bloomFilter.add("lxhcaicai-2");
+        bloomFilter.add("lxhcaicai-3");
+
+        //判断是否包含
+        boolean victory = bloomFilter.contains("lxhcaicai-1");
+        boolean forward = bloomFilter.contains("lxhcaicai-4");
+        System.out.println(victory);
+        System.out.println(forward);
+
+        // 关闭客户端
+        redissonClient.shutdown();
+    }
 }
+

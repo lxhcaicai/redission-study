@@ -3,7 +3,11 @@ package com.github.redission;
 import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.*;
+import org.redisson.api.listener.MessageListener;
+import org.redisson.client.codec.Codec;
+import org.redisson.codec.SerializationCodec;
 import org.redisson.config.Config;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.List;
@@ -240,6 +244,66 @@ public class RedissionTester {
 
         // 关闭客户端
         redissonClient.shutdown();
+    }
+
+    class Message{
+        Long id;
+        String name;
+        Integer age;
+
+        public Message(Long id, String name, Integer age) {
+            this.id = id;
+            this.name = name;
+            this.age = age;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Integer getAge() {
+            return age;
+        }
+    }
+    /**
+     *  发布订阅操作
+     *  Redisson操作RTopic执行发布订阅操作
+     **/
+    @Test
+    public void topicPublisherAndSubscriber() throws InterruptedException {
+        //====================创建Redisson客户端====================
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://127.0.0.1:6379")
+                .setPassword("123456");
+        //config.useSingleServer().setAddress("redis://127.0.0.1:6379");
+        RedissonClient redissonClient = Redisson.create(config);
+        RedissonClient redissonClient1 = Redisson.create(config);
+
+        //====================操作topic执行发布操作====================
+        RTopic topic1 = redissonClient.getTopic("topic",new SerializationCodec());
+        topic1.publish(new Message(1L,"victory",18));
+
+        //====================操作topic执行订阅操作====================
+        Thread.sleep(5000);
+        RTopic topic = redissonClient1.getTopic("topic", new SerializationCodec());
+        topic.addListener(Message.class, new MessageListener<Message>() {
+            @Override
+            public void onMessage(CharSequence channel, Message msg) {
+                System.out.println("onMessage:=========" + channel + "; Thread:========= " + Thread.currentThread().toString());
+                System.out.println(" name : " + msg.getName() + " age : " + msg.getAge());
+                LoggerFactory.getLogger(RedissionTester.class).info("Redisson接收到消息",msg);
+               // System.out.println("Redisson接收到消息:" + msg);
+            }
+        });
+
+        //====================关闭客户端====================
+        redissonClient.shutdown();
+        redissonClient1.shutdown();
     }
 }
 
